@@ -45,7 +45,6 @@ pub fn list_input_devices() -> Result<Vec<DeviceInfo>, String> {
 /// Audio is captured at 16kHz mono f32.
 #[tauri::command]
 pub fn start_ptt(_app: AppHandle) -> Result<(), String> {
-    use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
     use std::sync::atomic::Ordering;
 
     if PTT_RECORDING.load(Ordering::SeqCst) {
