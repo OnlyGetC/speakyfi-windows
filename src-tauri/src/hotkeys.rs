@@ -148,7 +148,7 @@ fn run_hotkey_loop(app: AppHandle) {
                     let id = msg.wParam.0 as i32;
                     // lParam low word = modifiers, high word = vkCode
                     let vk_code = ((msg.lParam.0 >> 16) & 0xFFFF) as u32;
-                    let is_release = vk_code == 0;
+                    let _is_release = vk_code == 0;
 
                     match id {
                         ID_PTT => {

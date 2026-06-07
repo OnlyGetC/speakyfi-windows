@@ -18,7 +18,7 @@ pub fn send_text(text: String) -> Result<(), String> {
 fn send_text_windows(text: &str) -> Result<(), String> {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS,
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
         KEYEVENTF_KEYUP, KEYEVENTF_UNICODE,
     };
 
