@@ -1,0 +1,70 @@
+[package]
+name = "speakyfi"
+version = "1.6.0"
+description = "Speakyfi - AI Voice Transcription for Windows"
+authors = ["OnlyGetC"]
+edition = "2021"
+
+[lib]
+name = "speakyfi_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "speakyfi"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-shell = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+log = "0.4"
+env_logger = "0.11"
+
+# Audio capture (WASAPI on Windows via CPAL)
+cpal = "0.15"
+
+# whisper.cpp Rust bindings (optional — enabled via "local-whisper" feature)
+whisper-rs = { version = "0.13", features = [], optional = true }
+
+# HTTP client for cloud providers
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+
+# WAV encoding for cloud upload
+hound = "3"
+
+# AES-256-GCM for API key storage
+aes-gcm = "0.10"
+rand = "0.8"
+
+# Windows API
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+    "Win32_System_DataExchange",
+    "Win32_System_LibraryLoader",
+    "Win32_Security",
+] }
+machine-uid = "0.5"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+local-whisper = ["whisper-rs"]
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true

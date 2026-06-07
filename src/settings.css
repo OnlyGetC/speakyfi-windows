@@ -1,0 +1,415 @@
+/* ============================================================
+   Speakyfi Windows — Settings CSS
+   Amber IBM / TUI retro terminal aesthetic
+   ============================================================ */
+
+:root {
+  --amber-primary:  #cc8800;
+  --amber-bright:   #ffaa00;
+  --amber-hot:      #ff8800;
+  --amber-dim:      #8c5c00;
+  --amber-faint:    #593a00;
+  --amber-bg:       #0a0800;
+  --amber-bg-hdr:   #3a2800;
+  --amber-bg-panel: #0f0900;
+  --amber-border:   #3a2800;
+  --amber-border-f: #1e1400;
+  --font-mono: "Courier New", "Lucida Console", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--amber-bg);
+  color: var(--amber-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+#settings-app {
+  display: flex;
+  height: 100vh;
+  border: 1px solid var(--amber-border);
+}
+
+/* ---- Sidebar ---- */
+#sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  background: var(--amber-bg-hdr);
+  border-right: 1px solid var(--amber-border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.sidebar-header {
+  padding: 12px 10px 8px;
+  border-bottom: 1px solid var(--amber-border-f);
+}
+
+.sidebar-title {
+  display: block;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--amber-bright);
+  letter-spacing: 2px;
+  text-shadow: 0 0 5px rgba(204,136,0,0.5);
+}
+
+.sidebar-sub {
+  display: block;
+  font-size: 10px;
+  color: var(--amber-dim);
+  margin-top: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--amber-border-f);
+  flex-shrink: 0;
+}
+
+.sidebar-nav {
+  list-style: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.nav-item {
+  padding: 7px 12px;
+  cursor: pointer;
+  color: var(--amber-dim);
+  font-size: 11px;
+  transition: color 0.1s, background 0.1s;
+  border-left: 2px solid transparent;
+}
+
+.nav-item:hover {
+  color: var(--amber-primary);
+  background: rgba(204,136,0,0.06);
+}
+
+.nav-item.active {
+  color: var(--amber-bright);
+  border-left-color: var(--amber-primary);
+  background: rgba(204,136,0,0.1);
+}
+
+.sidebar-footer {
+  padding: 10px 8px;
+  border-top: 1px solid var(--amber-border-f);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- Buttons ---- */
+.amber-btn-full {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--amber-dim);
+  color: var(--amber-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 4px;
+  cursor: pointer;
+  transition: border-color 0.1s, color 0.1s;
+  text-align: center;
+}
+
+.amber-btn-full:hover {
+  border-color: var(--amber-bright);
+  color: var(--amber-bright);
+  text-shadow: 0 0 4px rgba(255,170,0,0.4);
+}
+
+.amber-btn-full.dim {
+  color: var(--amber-dim);
+  border-color: var(--amber-faint);
+}
+
+.amber-btn-full.dim:hover {
+  color: var(--amber-primary);
+  border-color: var(--amber-dim);
+}
+
+.amber-btn-action {
+  background: transparent;
+  border: 1px solid var(--amber-dim);
+  color: var(--amber-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.amber-btn-action:hover {
+  border-color: var(--amber-bright);
+  color: var(--amber-bright);
+}
+
+/* ---- Main content ---- */
+#main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  background: var(--amber-bg-panel);
+}
+
+.settings-section {
+  display: none;
+}
+
+.settings-section.active {
+  display: block;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--amber-bright);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--amber-border-f);
+  padding-bottom: 6px;
+}
+
+/* ---- Setting rows ---- */
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.setting-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.setting-label {
+  color: var(--amber-dim);
+  font-size: 11px;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+
+.setting-value {
+  color: var(--amber-primary);
+  font-size: 11px;
+}
+
+.setting-hint {
+  color: var(--amber-faint);
+  font-size: 10px;
+}
+
+/* ---- Inputs ---- */
+.amber-select,
+.amber-input {
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  color: var(--amber-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 8px;
+  min-width: 180px;
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.amber-select:focus,
+.amber-input:focus {
+  border-color: var(--amber-primary);
+}
+
+.amber-select option {
+  background: var(--amber-bg);
+  color: var(--amber-primary);
+}
+
+.amber-textarea {
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  color: var(--amber-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 8px;
+  width: 100%;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.amber-textarea:focus {
+  border-color: var(--amber-primary);
+}
+
+/* ---- Key capture button ---- */
+.key-capture {
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-dim);
+  color: var(--amber-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 14px;
+  cursor: pointer;
+  min-width: 100px;
+  text-align: center;
+  transition: border-color 0.1s;
+}
+
+.key-capture:hover {
+  border-color: var(--amber-primary);
+}
+
+.key-capture.capturing {
+  border-color: var(--amber-hot);
+  color: var(--amber-hot);
+  animation: blink-border 0.5s step-start infinite;
+}
+
+@keyframes blink-border {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.4; }
+}
+
+/* ---- Info box ---- */
+.info-box {
+  background: rgba(204,136,0,0.04);
+  border: 1px solid var(--amber-faint);
+  border-left: 3px solid var(--amber-dim);
+  padding: 8px 10px;
+  font-size: 10px;
+  color: var(--amber-dim);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.info-prefix {
+  color: var(--amber-primary);
+  font-weight: bold;
+}
+
+.amber-link {
+  color: var(--amber-bright);
+  text-decoration: underline;
+}
+
+.amber-link:hover {
+  text-shadow: 0 0 4px rgba(255,170,0,0.4);
+}
+
+/* ---- Radio group ---- */
+.radio-group {
+  display: flex;
+  gap: 16px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--amber-primary);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: var(--amber-primary);
+  cursor: pointer;
+}
+
+/* ---- Correction sub-config ---- */
+.correction-config {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--amber-border-f);
+  background: rgba(204,136,0,0.03);
+}
+
+/* ---- Model list ---- */
+.model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.model-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--amber-border-f);
+  font-size: 11px;
+}
+
+.model-name {
+  color: var(--amber-primary);
+  min-width: 60px;
+}
+
+.model-size {
+  color: var(--amber-dim);
+  min-width: 80px;
+}
+
+.model-status-ok {
+  color: #44cc66;
+}
+
+.model-status-no {
+  color: var(--amber-faint);
+}
+
+/* ---- Progress bar ---- */
+.progress-bar-wrap {
+  position: relative;
+  height: 18px;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-dim);
+  margin-top: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--amber-primary);
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  line-height: 18px;
+  color: var(--amber-bg);
+  font-weight: bold;
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--amber-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--amber-faint);
+}

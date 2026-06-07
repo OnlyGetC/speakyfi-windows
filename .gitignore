@@ -1,0 +1,29 @@
+# Rust build artifacts
+target/
+src-tauri/target/
+
+# Node.js (if frontend tooling added later)
+node_modules/
+dist/
+
+# Tauri generated files
+src-tauri/gen/
+
+# Environment and secrets
+.env
+*.env.local
+keys.dat
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

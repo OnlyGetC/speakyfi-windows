@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speakyfi</title>
+  <link rel="stylesheet" href="overlay.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header bar -->
+    <div class="header-bar">
+      <span class="app-name">SPEAKYFI</span>
+      <span class="app-tag"> [AMBER]</span>
+      <div class="header-actions">
+        <button class="amber-btn" id="btn-settings" title="Settings">[CFG]</button>
+        <button class="amber-btn close-btn" id="btn-close" title="Quit">[&#x2715;]</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="status-bar">
+      <span class="status-icon" id="status-icon">&#x25CB;</span>
+      <span class="status-text" id="status-text">READY</span>
+      <span class="status-mode" id="status-mode">PTT</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Content area -->
+    <div class="content-area" id="content-area">
+      <!-- idle state -->
+      <div id="state-idle" class="state-view active">
+        <div class="idle-prompt">
+          <span class="prompt-prefix">C:\&gt;&nbsp;</span>
+          <span class="prompt-text" id="idle-hint">Hold Ctrl to record</span>
+          <span class="cursor blink">_</span>
+        </div>
+      </div>
+
+      <!-- recording state -->
+      <div id="state-recording" class="state-view">
+        <div class="recording-row">
+          <span class="rec-dot blink">[REC]</span>
+          <div class="waveform" id="waveform">
+            <span class="bar" style="height:4px"></span>
+            <span class="bar" style="height:10px"></span>
+            <span class="bar" style="height:7px"></span>
+            <span class="bar" style="height:14px"></span>
+            <span class="bar" style="height:6px"></span>
+            <span class="bar" style="height:12px"></span>
+            <span class="bar" style="height:5px"></span>
+            <span class="bar" style="height:9px"></span>
+            <span class="bar" style="height:3px"></span>
+            <span class="bar" style="height:11px"></span>
+          </div>
+          <span class="rec-label">RECORDING...</span>
+        </div>
+      </div>
+
+      <!-- transcribing state -->
+      <div id="state-transcribing" class="state-view">
+        <div class="processing-row">
+          <span class="proc-label">PROCESSING</span>
+          <span class="cursor blink">...</span>
+        </div>
+      </div>
+
+      <!-- result state -->
+      <div id="state-result" class="state-view">
+        <div class="result-row">
+          <span class="result-prefix">OUTPUT:&nbsp;</span>
+          <span class="result-text" id="result-text"></span>
+        </div>
+        <div class="result-actions">
+          <button class="amber-btn" id="btn-copy">[COPY]</button>
+          <button class="amber-btn dim-btn" id="btn-dismiss">[ESC]</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Footer -->
+    <div class="footer-bar">
+      <span class="footer-hint" id="footer-hint">v1.6.0 &nbsp;|&nbsp; speakyfi.app</span>
+      <span class="footer-mode" id="footer-mode"></span>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speakyfi — Settings</title>
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <div id="settings-app">
+
+    <!-- Sidebar navigation -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">SPEAKYFI</span>
+        <span class="sidebar-sub">[CFG]</span>
+      </div>
+      <div class="divider"></div>
+      <ul class="sidebar-nav">
+        <li class="nav-item active" data-section="hotkeys">&#x2022; Hotkeys</li>
+        <li class="nav-item" data-section="model">&#x2022; Model</li>
+        <li class="nav-item" data-section="language">&#x2022; Language</li>
+        <li class="nav-item" data-section="prompt">&#x2022; Prompt</li>
+        <li class="nav-item" data-section="correction">&#x2022; Correction</li>
+        <li class="nav-item" data-section="providers">&#x2022; Providers</li>
+        <li class="nav-item" data-section="interface">&#x2022; Interface</li>
+        <li class="nav-item" data-section="updates">&#x2022; Updates</li>
+      </ul>
+      <div class="sidebar-footer">
+        <button class="amber-btn-full" id="btn-save">[ SAVE ]</button>
+        <button class="amber-btn-full dim" id="btn-close">[ CLOSE ]</button>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main id="main-content">
+
+      <!-- // Hotkeys -->
+      <section id="sec-hotkeys" class="settings-section active">
+        <h2 class="section-title">// Hotkeys</h2>
+        <div class="setting-row">
+          <label class="setting-label">Push-to-Talk</label>
+          <button class="key-capture" id="ptt-key-capture" data-key="0x11" data-mods="0">
+            <span id="ptt-key-label">Ctrl</span>
+          </button>
+          <span class="setting-hint">Hold to record</span>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">VAD Toggle</label>
+          <button class="key-capture" id="vad-key-capture" data-key="0" data-mods="0">
+            <span id="vad-key-label">Not set</span>
+          </button>
+          <span class="setting-hint">Toggle always-on detection</span>
+        </div>
+        <div class="info-box">
+          <span class="info-prefix">INFO&gt;&nbsp;</span>
+          Click a key button, then press the desired shortcut.
+          Changes take effect after save + restart.
+        </div>
+      </section>
+
+      <!-- // Model -->
+      <section id="sec-model" class="settings-section">
+        <h2 class="section-title">// Model</h2>
+        <div class="setting-row">
+          <label class="setting-label">Active Model</label>
+          <select class="amber-select" id="model-select">
+            <option value="tiny">tiny (~39 MB)</option>
+            <option value="base" selected>base (~74 MB)</option>
+            <option value="small">small (~244 MB)</option>
+            <option value="medium">medium (~769 MB)</option>
+          </select>
+        </div>
+        <div id="model-list" class="model-list">
+          <!-- Populated by JS -->
+        </div>
+        <div class="setting-row">
+          <button class="amber-btn-action" id="btn-download-model">[ DOWNLOAD SELECTED ]</button>
+        </div>
+        <div class="progress-bar-wrap" id="download-progress-wrap" style="display:none">
+          <div class="progress-bar" id="download-progress-bar" style="width:0%"></div>
+          <span class="progress-label" id="download-progress-label">0%</span>
+        </div>
+      </section>
+
+      <!-- // Language -->
+      <section id="sec-language" class="settings-section">
+        <h2 class="section-title">// Language</h2>
+        <div class="setting-row">
+          <label class="setting-label">Recognition Language</label>
+          <select class="amber-select" id="lang-select">
+            <option value="auto">Auto-detect</option>
+            <option value="en">English</option>
+            <option value="ru">Russian</option>
+            <option value="de">German</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+            <option value="zh">Chinese</option>
+            <option value="ja">Japanese</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- // Prompt -->
+      <section id="sec-prompt" class="settings-section">
+        <h2 class="section-title">// Prompt</h2>
+        <div class="setting-col">
+          <label class="setting-label">Initial Prompt</label>
+          <textarea class="amber-textarea" id="prompt-input" rows="5"
+            placeholder="Optional context for whisper (e.g. domain vocabulary)"></textarea>
+          <button class="amber-btn-action" id="btn-reset-prompt">[ RESET ]</button>
+        </div>
+      </section>
+
+      <!-- // Correction -->
+      <section id="sec-correction" class="settings-section">
+        <h2 class="section-title">// Correction</h2>
+        <div class="setting-row">
+          <label class="setting-label">Mode</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="correction-mode" value="off" checked /> Off
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="correction-mode" value="ollama" /> Ollama (local)
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="correction-mode" value="api" /> API (OpenAI-compat)
+            </label>
+          </div>
+        </div>
+        <div class="correction-config" id="correction-config-ollama" style="display:none">
+          <div class="setting-row">
+            <label class="setting-label">Endpoint</label>
+            <input class="amber-input" id="ollama-endpoint"
+              value="http://localhost:11434" type="text" />
+          </div>
+          <div class="setting-row">
+            <label class="setting-label">Model</label>
+            <input class="amber-input" id="ollama-model"
+              value="llama3.2:1b" type="text" />
+          </div>
+          <div class="info-box">
+            <span class="info-prefix">INFO&gt;&nbsp;</span>
+            Ollama not auto-installed on Windows.
+            <a class="amber-link" href="https://ollama.com" target="_blank">ollama.com</a>
+          </div>
+        </div>
+        <div class="correction-config" id="correction-config-api" style="display:none">
+          <div class="setting-row">
+            <label class="setting-label">Endpoint</label>
+            <input class="amber-input" id="api-endpoint"
+              value="https://api.groq.com/openai/v1" type="text" />
+          </div>
+          <div class="setting-row">
+            <label class="setting-label">Model</label>
+            <input class="amber-input" id="api-model"
+              value="llama3-8b-8192" type="text" />
+          </div>
+          <div class="setting-row">
+            <label class="setting-label">API Key</label>
+            <input class="amber-input" id="api-key-correction"
+              type="password" placeholder="sk-..." />
+          </div>
+        </div>
+      </section>
+
+      <!-- // Providers -->
+      <section id="sec-providers" class="settings-section">
+        <h2 class="section-title">// Cloud Providers</h2>
+        <div class="setting-row">
+          <label class="setting-label">Provider</label>
+          <select class="amber-select" id="provider-select">
+            <option value="local">Local (whisper.cpp)</option>
+            <option value="openai">OpenAI Whisper</option>
+            <option value="groq">Groq</option>
+            <option value="deepgram">Deepgram</option>
+          </select>
+        </div>
+        <div id="provider-key-section" style="display:none">
+          <div class="setting-row">
+            <label class="setting-label">API Key</label>
+            <input class="amber-input" id="provider-api-key" type="password" placeholder="sk-..." />
+            <button class="amber-btn-action" id="btn-save-provider-key">[ SAVE KEY ]</button>
+          </div>
+          <div class="info-box">
+            <span class="info-prefix">SEC&gt;&nbsp;</span>
+            Key stored encrypted with AES-256-GCM using your machine ID.
+          </div>
+        </div>
+      </section>
+
+      <!-- // Interface -->
+      <section id="sec-interface" class="settings-section">
+        <h2 class="section-title">// Interface</h2>
+        <div class="setting-row">
+          <label class="setting-label">UI Language</label>
+          <select class="amber-select" id="ui-lang-select">
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- // Updates -->
+      <section id="sec-updates" class="settings-section">
+        <h2 class="section-title">// Updates</h2>
+        <div class="setting-row">
+          <label class="setting-label">Current Version</label>
+          <span class="setting-value" id="current-version">v1.6.0</span>
+        </div>
+        <div class="setting-row">
+          <button class="amber-btn-action" id="btn-check-updates">[ CHECK FOR UPDATES ]</button>
+        </div>
+        <div class="info-box" id="update-result" style="display:none">
+          <span class="info-prefix">UPD&gt;&nbsp;</span>
+          <span id="update-message"></span>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
