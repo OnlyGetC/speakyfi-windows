@@ -3,8 +3,8 @@
  * Handles navigation, config load/save, key capture, model downloads.
  */
 
-const { invoke, event } = window.__TAURI__;
-const { listen } = event;
+const { invoke } = window.__TAURI__.core;
+const { listen } = window.__TAURI__.event;
 
 // ============================================================
 // Navigation
@@ -198,14 +198,22 @@ document.addEventListener("keydown", (e) => {
   if (e.altKey)   mods |= 0x0001;
   if (e.shiftKey) mods |= 0x0004;
 
-  // Ignore pure modifier presses
-  if ([0x10, 0x11, 0x12, 0x5B, 0x5C].includes(key)) return;
-
-  capturingElement.dataset.key = key;
-  capturingElement.dataset.mods = mods;
+  // Allow pure modifier presses (Ctrl alone, Alt alone, Shift alone, Win alone)
+  // VK: Shift=0x10, Ctrl=0x11, Alt=0x12, LWin=0x5B, RWin=0x5C
+  const modifierVKs = [0x10, 0x11, 0x12, 0x5B, 0x5C];
+  if (modifierVKs.includes(key)) {
+    // Capture the modifier key itself — mods will be 0, key is the VK code
+    capturingElement.dataset.key = key;
+    capturingElement.dataset.mods = 0;
+  } else {
+    capturingElement.dataset.key = key;
+    capturingElement.dataset.mods = mods;
+  }
 
   const labelId = capturingElement.id.replace("capture", "label");
-  setKeyLabel(capturingElement.id, labelId, key, mods);
+  setKeyLabel(capturingElement.id, labelId,
+    parseInt(capturingElement.dataset.key),
+    parseInt(capturingElement.dataset.mods));
 
   capturingElement.classList.remove("capturing");
   capturingElement = null;

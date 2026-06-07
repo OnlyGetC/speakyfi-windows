@@ -3,8 +3,8 @@
  * Handles PTT/VAD events, Tauri invocations, UI state transitions.
  */
 
-const { invoke, event } = window.__TAURI__;
-const { listen, emit } = event;
+const { invoke } = window.__TAURI__.core;
+const { listen, emit } = window.__TAURI__.event;
 
 // ============================================================
 // Localization
