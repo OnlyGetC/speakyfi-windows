@@ -86,6 +86,10 @@ let currentMode = "ptt"; // ptt | vad
 let config = null;
 const HISTORY_KEY = "speakyfi.history";
 const MIN_AUDIO_SAMPLES = 1600; // 100ms at 16kHz; shorter buffers are not useful.
+const SAMPLE_RATE = 16000;
+const LOCAL_TRANSCRIBE_TIMEOUT_MS = 120000;
+const CLOUD_TRANSCRIBE_TIMEOUT_MS = 60000;
+const CORRECTION_TIMEOUT_MS = 45000;
 
 // ============================================================
 // UI References
@@ -209,33 +213,46 @@ async function runTranscription(audioBuffer) {
     if (cfg.cloud_provider && cfg.cloud_provider !== "local") {
       // Cloud transcription
       const audioB64 = float32ToBase64(audioBuffer);
-      text = await invoke("cloud_transcribe", {
-        provider: cfg.cloud_provider,
-        audioB64,
-        language: cfg.language || "auto",
-        prompt: cfg.prompt || "",
-      });
+      text = await withTimeout(
+        invoke("cloud_transcribe", {
+          provider: cfg.cloud_provider,
+          audioB64,
+          language: cfg.language || "auto",
+          prompt: cfg.prompt || "",
+        }),
+        CLOUD_TRANSCRIBE_TIMEOUT_MS,
+        "Cloud transcription timed out. Check network/provider status or try a shorter recording.",
+      );
     } else {
       // Local whisper.cpp
-      text = await invoke("transcribe_audio", {
-        audio: Array.from(audioBuffer),
-        language: cfg.language || "auto",
-        model: cfg.model || "base",
-        prompt: cfg.prompt || "",
-      });
+      const localAudio = limitLocalAudio(audioBuffer);
+      text = await withTimeout(
+        invoke("transcribe_audio", {
+          audio: Array.from(localAudio),
+          language: cfg.language || "auto",
+          model: cfg.model || "base",
+          prompt: cfg.prompt || "",
+        }),
+        LOCAL_TRANSCRIBE_TIMEOUT_MS,
+        "Local whisper timed out. Try the tiny/base model, record a shorter phrase, or use a cloud provider.",
+      );
     }
 
     // Text correction
     if (cfg.correction_mode && cfg.correction_mode !== "off") {
-      text = await invoke("correct_text", {
-        request: {
-          text,
-          mode: cfg.correction_mode,
-          endpoint: cfg.correction_endpoint || "http://localhost:11434",
-          model: cfg.correction_model || "llama3.2:1b",
-          api_key: "",
-        },
-      });
+      text = await withTimeout(
+        invoke("correct_text", {
+          request: {
+            text,
+            mode: cfg.correction_mode,
+            endpoint: cfg.correction_endpoint || "http://localhost:11434",
+            model: cfg.correction_model || "llama3.2:1b",
+            api_key: "",
+          },
+        }),
+        CORRECTION_TIMEOUT_MS,
+        "Text correction timed out. Turn correction off or check the correction model endpoint.",
+      );
     }
 
     // Auto-insert into active window
@@ -287,6 +304,25 @@ function showPipelineError(message, footer = "ERROR") {
   });
   setState("result", text);
   els.footerMode.textContent = footer;
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+function limitLocalAudio(audioBuffer) {
+  const maxSamples = SAMPLE_RATE * 30;
+  if (audioBuffer.length <= maxSamples) {
+    return audioBuffer;
+  }
+  return audioBuffer.slice(audioBuffer.length - maxSamples);
 }
 
 // ============================================================

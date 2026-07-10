@@ -10,6 +10,10 @@ const MODEL_URLS: &[(&str, &str)] = &[
     ("medium", "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin"),
 ];
 
+const SAMPLE_RATE: usize = 16000;
+const MAX_LOCAL_AUDIO_SECONDS: usize = 30;
+const MAX_LOCAL_AUDIO_SAMPLES: usize = SAMPLE_RATE * MAX_LOCAL_AUDIO_SECONDS;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelStatus {
     pub model: String,
@@ -51,6 +55,16 @@ pub fn transcribe_audio(
                 model
             ));
         }
+        validate_model_file(&path, &model)?;
+
+        let audio = if audio.len() > MAX_LOCAL_AUDIO_SAMPLES {
+            audio[audio.len() - MAX_LOCAL_AUDIO_SAMPLES..].to_vec()
+        } else {
+            audio
+        };
+        if audio.is_empty() {
+            return Err("No audio samples captured for local transcription.".to_string());
+        }
 
         let ctx = WhisperContext::new_with_params(
             path.to_str().unwrap(),
@@ -91,6 +105,33 @@ pub fn transcribe_audio(
         // Local whisper not compiled in — instruct user to use cloud provider
         let _ = (app, audio, language, model, prompt);
         Err("Local whisper.cpp is not enabled in this build. Download the local-whisper build or choose a cloud provider in Settings.".to_string())
+    }
+}
+
+fn validate_model_file(path: &PathBuf, model: &str) -> Result<(), String> {
+    let size = std::fs::metadata(path)
+        .map_err(|e| format!("Failed to read model file metadata: {}", e))?
+        .len();
+    let min_size = minimum_model_size_bytes(model);
+
+    if size < min_size {
+        return Err(format!(
+            "Model '{}' looks incomplete ({:.1} MB). Delete it and download it again.",
+            model,
+            size as f64 / 1_048_576.0,
+        ));
+    }
+
+    Ok(())
+}
+
+fn minimum_model_size_bytes(model: &str) -> u64 {
+    match model {
+        "tiny" => 30 * 1_048_576,
+        "base" => 60 * 1_048_576,
+        "small" => 200 * 1_048_576,
+        "medium" => 650 * 1_048_576,
+        _ => 1,
     }
 }
 
@@ -196,5 +237,13 @@ mod tests {
         assert!(audio.iter().all(|&s| s >= -1.0 && s <= 1.0));
         // Verify the buffer length matches expectation for 1s @ 16kHz
         assert_eq!(audio.len(), 16000);
+    }
+
+    #[test]
+    fn model_minimum_sizes_are_nonzero_for_known_models() {
+        assert!(minimum_model_size_bytes("tiny") > 0);
+        assert!(minimum_model_size_bytes("base") > minimum_model_size_bytes("tiny"));
+        assert!(minimum_model_size_bytes("small") > minimum_model_size_bytes("base"));
+        assert!(minimum_model_size_bytes("medium") > minimum_model_size_bytes("small"));
     }
 }
