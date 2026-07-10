@@ -15,7 +15,7 @@
   },
   {
     "id": "ci.tauri_build",
-    "title": "Tauri Windows build completes",
+    "title": "Tauri Windows build completes with local whisper enabled",
     "method": "github_actions",
     "auto": true,
     "env": "TAURI_BUILD_STATUS"
@@ -81,10 +81,10 @@
   },
   {
     "id": "runtime.transcription",
-    "title": "Recorded audio is transcribed by the selected provider",
+    "title": "Recorded audio is transcribed by local whisper or the selected cloud provider",
     "method": "manual",
     "auto": false,
-    "manual_reason": "Requires provider key and real recorded audio."
+    "manual_reason": "Requires a downloaded local model or provider key plus real recorded audio."
   },
   {
     "id": "runtime.text_insertion",

@@ -38,6 +38,7 @@ pub fn transcribe_audio(
     audio: Vec<f32>,
     language: String,
     model: String,
+    prompt: String,
 ) -> Result<String, String> {
     #[cfg(feature = "local-whisper")]
     {
@@ -60,6 +61,9 @@ pub fn transcribe_audio(
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         if language != "auto" && !language.is_empty() {
             params.set_language(Some(&language));
+        }
+        if !prompt.trim().is_empty() {
+            params.set_initial_prompt(prompt.trim());
         }
         params.set_print_special(false);
         params.set_print_progress(false);
@@ -85,8 +89,8 @@ pub fn transcribe_audio(
     #[cfg(not(feature = "local-whisper"))]
     {
         // Local whisper not compiled in — instruct user to use cloud provider
-        let _ = (app, audio, language, model);
-        Err("Local whisper.cpp not enabled. Please configure a cloud provider in Settings.".to_string())
+        let _ = (app, audio, language, model, prompt);
+        Err("Local whisper.cpp is not enabled in this build. Download the local-whisper build or choose a cloud provider in Settings.".to_string())
     }
 }
 

@@ -31,17 +31,17 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0" --locked
 
-      - name: Rust check
+      - name: Rust check (local whisper enabled)
         id: rust_check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
+        run: cargo check --manifest-path src-tauri/Cargo.toml --features local-whisper
 
-      - name: Rust tests
+      - name: Rust tests (local whisper enabled)
         id: rust_tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        run: cargo test --manifest-path src-tauri/Cargo.toml --features local-whisper
 
-      - name: Build Speakyfi (cloud-only, no local whisper)
+      - name: Build Speakyfi (local whisper enabled)
         id: tauri_build
-        run: cargo tauri build
+        run: cargo tauri build --features local-whisper
         working-directory: .
         env:
           TAURI_SIGNING_PRIVATE_KEY: ""

@@ -84,9 +84,9 @@
         </div>
         <div class="info-box">
           <span class="info-prefix">INFO&gt;&nbsp;</span>
-          This Windows build is cloud-only for speech recognition. Downloaded whisper.cpp models
-          are useful only in a separate local-whisper build. For the current build, choose a
-          provider in Cloud Providers and save its API key.
+          Local whisper.cpp is the default free speech recognizer in this build.
+          Download one model here, keep Provider set to Local, then record again.
+          Tiny/base are faster; small/medium are more accurate but slower.
         </div>
       </section>
 
@@ -119,7 +119,7 @@
         </div>
         <div class="info-box">
           <span class="info-prefix">INFO&gt;&nbsp;</span>
-          Prompt is sent to OpenAI/Groq transcription as recognition context.
+          Prompt is sent to local whisper.cpp and OpenAI/Groq transcription as recognition context.
           Example: names, domain words, product vocabulary. It is not the Ollama correction prompt.
         </div>
       </section>
@@ -206,7 +206,9 @@
         </div>
         <div class="info-box">
           <span class="info-prefix">FLOW&gt;&nbsp;</span>
-          Speech recognition uses this provider. Ollama in Correction does not listen to audio;
+          Local is free and runs on this machine after downloading a model.
+          OpenAI, Groq, and Deepgram are optional paid/cloud alternatives.
+          Ollama in Correction does not listen to audio;
           it only edits text after this provider returns a transcript.
         </div>
       </section>

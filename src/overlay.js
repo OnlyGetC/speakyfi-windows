@@ -221,6 +221,7 @@ async function runTranscription(audioBuffer) {
         audio: Array.from(audioBuffer),
         language: cfg.language || "auto",
         model: cfg.model || "base",
+        prompt: cfg.prompt || "",
       });
     }
 
