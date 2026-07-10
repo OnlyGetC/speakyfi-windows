@@ -142,7 +142,7 @@ fn run_hotkey_loop(app: AppHandle) {
                     HOT_KEY_MODIFIERS(ptt.modifiers),
                     ptt.key,
                 );
-                registered_ptt = ok.as_bool();
+                registered_ptt = ok.is_ok();
                 if registered_ptt {
                     ptt_key_for_release = Some(ptt.key);
                 } else {
@@ -161,7 +161,7 @@ fn run_hotkey_loop(app: AppHandle) {
                     HOT_KEY_MODIFIERS(vad.modifiers),
                     vad.key,
                 );
-                registered_vad = ok.as_bool();
+                registered_vad = ok.is_ok();
                 if !registered_vad {
                     let _ = app.emit(
                         "hotkey-error",
