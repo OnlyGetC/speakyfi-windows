@@ -84,6 +84,7 @@ let pttAudioBuffer = null;
 let resultDismissTimer = null;
 let currentMode = "ptt"; // ptt | vad
 let config = null;
+const HISTORY_KEY = "speakyfi.history";
 
 // ============================================================
 // UI References
@@ -145,9 +146,27 @@ function setState(state, data) {
       els.resultText.textContent = data || "";
       els.btnCopy.textContent = t("copy");
 
-      // Auto-dismiss after 6 seconds
-      resultDismissTimer = setTimeout(() => setState("idle"), 6000);
+      if (!String(data || "").startsWith("[ERROR]") && !String(data || "").startsWith("[HOTKEY ERROR]")) {
+        resultDismissTimer = setTimeout(() => hideOverlay(), 6000);
+      }
       break;
+  }
+}
+
+async function showOverlay() {
+  try {
+    await invoke("show_main_window");
+  } catch (err) {
+    console.error("show overlay error:", err);
+  }
+}
+
+async function hideOverlay() {
+  setState("idle");
+  try {
+    await invoke("hide_main_window");
+  } catch (err) {
+    console.error("hide overlay error:", err);
   }
 }
 
@@ -183,6 +202,8 @@ async function runTranscription(audioBuffer) {
   try {
     const cfg = config || await loadConfig();
     let text = "";
+    let inserted = false;
+    let insertError = "";
 
     if (cfg.cloud_provider && cfg.cloud_provider !== "local") {
       // Cloud transcription
@@ -191,6 +212,7 @@ async function runTranscription(audioBuffer) {
         provider: cfg.cloud_provider,
         audioB64,
         language: cfg.language || "auto",
+        prompt: cfg.prompt || "",
       });
     } else {
       // Local whisper.cpp
@@ -216,13 +238,38 @@ async function runTranscription(audioBuffer) {
 
     // Auto-insert into active window
     if (text && text.trim()) {
-      await invoke("send_text", { text: text.trim() + " " });
+      try {
+        await invoke("send_text", { text: text.trim() + " " });
+        inserted = true;
+      } catch (err) {
+        insertError = err.message || String(err);
+        console.error("send_text error:", err);
+      }
     }
 
+    addHistory({
+      text: text.trim(),
+      inserted,
+      insertError,
+      provider: cfg.cloud_provider || "local",
+      language: cfg.language || "auto",
+      model: cfg.model || "base",
+    });
+
     setState("result", text.trim());
+    els.footerMode.textContent = inserted ? "INSERT OK" : (insertError ? "INSERT FAIL" : "NO TEXT");
   } catch (err) {
     console.error("Transcription error:", err);
+    addHistory({
+      text: "",
+      inserted: false,
+      insertError: err.message || String(err),
+      provider: config?.cloud_provider || "local",
+      language: config?.language || "auto",
+      model: config?.model || "base",
+    });
     setState("result", "[ERROR] " + (err.message || err));
+    els.footerMode.textContent = "ERROR";
   }
 }
 
@@ -234,6 +281,8 @@ async function setupEventListeners() {
   await listen("ptt-press", async () => {
     if (currentState !== "idle") return;
     try {
+      await invoke("remember_foreground_window");
+      await showOverlay();
       await invoke("start_ptt");
       setState("recording");
     } catch (err) {
@@ -318,26 +367,20 @@ els.btnCopy.addEventListener("click", () => {
 });
 
 els.btnDismiss.addEventListener("click", () => {
-  setState("idle");
+  hideOverlay();
 });
 
 els.btnSettings.addEventListener("click", async () => {
   try {
-    await invoke("tauri", { cmd: "openWindow", label: "settings" });
-  } catch {
-    // Tauri v2: use window API
-    const { WebviewWindow } = window.__TAURI__.webviewWindow;
-    const win = await WebviewWindow.getByLabel("settings");
-    if (win) {
-      await win.show();
-      await win.setFocus();
-    }
+    await invoke("show_settings_window");
+  } catch (err) {
+    console.error("settings open error:", err);
+    setState("result", "[ERROR] Settings window failed: " + (err.message || err));
   }
 });
 
 els.btnClose.addEventListener("click", async () => {
-  const { exit } = window.__TAURI__.process;
-  await exit(0);
+  await hideOverlay();
 });
 
 // ============================================================
@@ -374,6 +417,24 @@ function float32ToBase64(buffer) {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
+}
+
+function addHistory(entry) {
+  const history = readHistory();
+  history.unshift({
+    ts: new Date().toISOString(),
+    ...entry,
+  });
+  const trimmed = history.slice(0, 50);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+}
+
+function readHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 
 // ============================================================

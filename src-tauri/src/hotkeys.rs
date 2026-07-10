@@ -193,6 +193,7 @@ fn run_hotkey_loop(app: AppHandle) {
                     match id {
                         ID_PTT => {
                             if !PTT_PRESSED.swap(true, Ordering::SeqCst) {
+                                let _ = crate::output::remember_foreground_window_internal();
                                 let _ = app.emit("ptt-press", ());
                                 if let Some(key) = ptt_key_for_release {
                                     poll_ptt_release(&app, key);

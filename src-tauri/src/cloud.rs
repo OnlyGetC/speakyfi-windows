@@ -6,6 +6,7 @@ pub struct CloudTranscribeRequest {
     pub provider: String,
     pub audio_b64: String,
     pub language: String,
+    pub prompt: String,
 }
 
 /// Transcribe audio using a cloud provider (OpenAI / Groq / Deepgram).
@@ -16,6 +17,7 @@ pub async fn cloud_transcribe(
     provider: String,
     audio_b64: String,
     language: String,
+    prompt: String,
 ) -> Result<String, String> {
     // Load API key from secure storage
     let api_key = crate::config::load_api_key(app, provider.clone())?;
@@ -38,14 +40,14 @@ pub async fn cloud_transcribe(
     let wav_bytes = pcm_to_wav(&audio, 16000).map_err(|e| e.to_string())?;
 
     match provider.as_str() {
-        "openai" => openai_transcribe(wav_bytes, &language, &api_key).await,
-        "groq"   => groq_transcribe(wav_bytes, &language, &api_key).await,
+        "openai" => openai_transcribe(wav_bytes, &language, &prompt, &api_key).await,
+        "groq"   => groq_transcribe(wav_bytes, &language, &prompt, &api_key).await,
         "deepgram" => deepgram_transcribe(wav_bytes, &language, &api_key).await,
         other    => Err(format!("Unknown cloud provider: {}", other)),
     }
 }
 
-async fn openai_transcribe(wav: Vec<u8>, language: &str, key: &str) -> Result<String, String> {
+async fn openai_transcribe(wav: Vec<u8>, language: &str, prompt: &str, key: &str) -> Result<String, String> {
     use reqwest::multipart;
 
     let part = multipart::Part::bytes(wav)
@@ -59,6 +61,9 @@ async fn openai_transcribe(wav: Vec<u8>, language: &str, key: &str) -> Result<St
 
     if language != "auto" && !language.is_empty() {
         form = form.text("language", language.to_string());
+    }
+    if !prompt.trim().is_empty() {
+        form = form.text("prompt", prompt.trim().to_string());
     }
 
     let client = reqwest::Client::new();
@@ -77,7 +82,7 @@ async fn openai_transcribe(wav: Vec<u8>, language: &str, key: &str) -> Result<St
         .ok_or_else(|| format!("OpenAI error: {}", json))
 }
 
-async fn groq_transcribe(wav: Vec<u8>, language: &str, key: &str) -> Result<String, String> {
+async fn groq_transcribe(wav: Vec<u8>, language: &str, prompt: &str, key: &str) -> Result<String, String> {
     use reqwest::multipart;
 
     let part = multipart::Part::bytes(wav)
@@ -91,6 +96,9 @@ async fn groq_transcribe(wav: Vec<u8>, language: &str, key: &str) -> Result<Stri
 
     if language != "auto" && !language.is_empty() {
         form = form.text("language", language.to_string());
+    }
+    if !prompt.trim().is_empty() {
+        form = form.text("prompt", prompt.trim().to_string());
     }
 
     let client = reqwest::Client::new();

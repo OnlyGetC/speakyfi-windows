@@ -7,7 +7,36 @@ mod correction;
 mod config;
 mod diagnostics;
 
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
+
+#[tauri::command]
+fn show_settings_window(app: AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("settings")
+        .ok_or_else(|| "Settings window not found".to_string())?;
+
+    window.show().map_err(|e| e.to_string())?;
+    window.set_focus().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn show_main_window(app: AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+
+    window.show().map_err(|e| e.to_string())?;
+    window.set_focus().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn hide_main_window(app: AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+
+    window.hide().map_err(|e| e.to_string())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -80,6 +109,7 @@ pub fn run() {
             hotkeys::register_ptt_hotkey,
             hotkeys::register_vad_toggle_hotkey,
             hotkeys::unregister_all_hotkeys,
+            output::remember_foreground_window,
             output::send_text,
             cloud::cloud_transcribe,
             correction::correct_text,
@@ -88,6 +118,9 @@ pub fn run() {
             config::save_api_key,
             config::load_api_key,
             diagnostics::collect_diagnostics,
+            show_settings_window,
+            show_main_window,
+            hide_main_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -5,6 +5,7 @@
 
 const { invoke } = window.__TAURI__.core;
 const { listen, emit } = window.__TAURI__.event;
+const HISTORY_KEY = "speakyfi.history";
 
 // ============================================================
 // Navigation
@@ -17,6 +18,7 @@ document.querySelectorAll(".nav-item").forEach(item => {
     const section = item.dataset.section;
     const sec = document.getElementById("sec-" + section);
     if (sec) sec.classList.add("active");
+    if (section === "history") renderHistory();
   });
 });
 
@@ -315,6 +317,53 @@ document.getElementById("btn-reset-prompt")?.addEventListener("click", () => {
 });
 
 // ============================================================
+// History
+// ============================================================
+function readHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById("history-list");
+  if (!list) return;
+
+  const history = readHistory();
+  if (history.length === 0) {
+    list.innerHTML = '<div class="history-empty">No transcription history yet.</div>';
+    return;
+  }
+
+  list.innerHTML = "";
+  history.slice(0, 30).forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "history-row";
+    const status = item.inserted ? "INSERT OK" : (item.insertError ? "INSERT FAIL" : "NO INSERT");
+    const text = item.text || item.insertError || "";
+    row.innerHTML = `
+      <div class="history-meta">
+        <span>${new Date(item.ts).toLocaleString()}</span>
+        <span>${status}</span>
+        <span>${item.provider || "local"}</span>
+      </div>
+      <div class="history-text"></div>
+    `;
+    row.querySelector(".history-text").textContent = text;
+    list.appendChild(row);
+  });
+}
+
+document.getElementById("btn-refresh-history")?.addEventListener("click", renderHistory);
+
+document.getElementById("btn-clear-history")?.addEventListener("click", () => {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+});
+
+// ============================================================
 // Update check (stub — checks GitHub releases)
 // ============================================================
 document.getElementById("btn-check-updates")?.addEventListener("click", async () => {
@@ -360,6 +409,7 @@ listen("model-download-complete", async (e) => {
 async function init() {
   await loadConfig();
   await refreshModelList();
+  renderHistory();
 }
 
 init();

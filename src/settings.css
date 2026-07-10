@@ -303,6 +303,15 @@ html, body {
   font-weight: bold;
 }
 
+code {
+  color: var(--amber-bright);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border-f);
+  padding: 1px 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
 .amber-link {
   color: var(--amber-bright);
   text-decoration: underline;
@@ -373,6 +382,44 @@ html, body {
 
 .model-status-no {
   color: var(--amber-faint);
+}
+
+/* ---- History ---- */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.history-row {
+  border: 1px solid var(--amber-border-f);
+  background: rgba(204,136,0,0.03);
+  padding: 8px;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--amber-dim);
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.history-text {
+  color: var(--amber-bright);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.history-empty {
+  color: var(--amber-faint);
+  font-size: 11px;
+  border: 1px solid var(--amber-border-f);
+  padding: 8px;
 }
 
 /* ---- Progress bar ---- */

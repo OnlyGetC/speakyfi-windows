@@ -23,6 +23,7 @@
         <li class="nav-item" data-section="prompt">&#x2022; Prompt</li>
         <li class="nav-item" data-section="correction">&#x2022; Correction</li>
         <li class="nav-item" data-section="providers">&#x2022; Providers</li>
+        <li class="nav-item" data-section="history">&#x2022; History</li>
         <li class="nav-item" data-section="interface">&#x2022; Interface</li>
         <li class="nav-item" data-section="updates">&#x2022; Updates</li>
       </ul>
@@ -55,7 +56,7 @@
         <div class="info-box">
           <span class="info-prefix">INFO&gt;&nbsp;</span>
           Click a key button, then press the desired shortcut.
-          Changes take effect after save + restart.
+          Changes take effect after save.
         </div>
       </section>
 
@@ -80,6 +81,12 @@
         <div class="progress-bar-wrap" id="download-progress-wrap" style="display:none">
           <div class="progress-bar" id="download-progress-bar" style="width:0%"></div>
           <span class="progress-label" id="download-progress-label">0%</span>
+        </div>
+        <div class="info-box">
+          <span class="info-prefix">INFO&gt;&nbsp;</span>
+          This Windows build is cloud-only for speech recognition. Downloaded whisper.cpp models
+          are useful only in a separate local-whisper build. For the current build, choose a
+          provider in Cloud Providers and save its API key.
         </div>
       </section>
 
@@ -109,6 +116,11 @@
           <textarea class="amber-textarea" id="prompt-input" rows="5"
             placeholder="Optional context for whisper (e.g. domain vocabulary)"></textarea>
           <button class="amber-btn-action" id="btn-reset-prompt">[ RESET ]</button>
+        </div>
+        <div class="info-box">
+          <span class="info-prefix">INFO&gt;&nbsp;</span>
+          Prompt is sent to OpenAI/Groq transcription as recognition context.
+          Example: names, domain words, product vocabulary. It is not the Ollama correction prompt.
         </div>
       </section>
 
@@ -142,8 +154,12 @@
           </div>
           <div class="info-box">
             <span class="info-prefix">INFO&gt;&nbsp;</span>
-            Ollama not auto-installed on Windows.
-            <a class="amber-link" href="https://ollama.com" target="_blank">ollama.com</a>
+            Ollama setup: install from
+            <a class="amber-link" href="https://ollama.com" target="_blank">ollama.com</a>,
+            run <code>ollama pull llama3.2:1b</code>, keep endpoint
+            <code>http://localhost:11434</code>, and set Model to the exact name from
+            <code>ollama list</code>, for example <code>llama3.2:1b</code>.
+            Ollama only corrects recognized text after transcription; it does not replace the speech recognizer.
           </div>
         </div>
         <div class="correction-config" id="correction-config-api" style="display:none">
@@ -187,6 +203,28 @@
             <span class="info-prefix">SEC&gt;&nbsp;</span>
             Key stored encrypted with AES-256-GCM using your machine ID.
           </div>
+        </div>
+        <div class="info-box">
+          <span class="info-prefix">FLOW&gt;&nbsp;</span>
+          Speech recognition uses this provider. Ollama in Correction does not listen to audio;
+          it only edits text after this provider returns a transcript.
+        </div>
+      </section>
+
+      <!-- // History -->
+      <section id="sec-history" class="settings-section">
+        <h2 class="section-title">// History</h2>
+        <div class="setting-row">
+          <button class="amber-btn-action" id="btn-refresh-history">[ REFRESH ]</button>
+          <button class="amber-btn-action" id="btn-clear-history">[ CLEAR ]</button>
+        </div>
+        <div id="history-list" class="history-list">
+          <!-- Populated by JS -->
+        </div>
+        <div class="info-box">
+          <span class="info-prefix">INFO&gt;&nbsp;</span>
+          History shows the latest transcription attempts and whether text insertion succeeded.
+          It is stored locally in this app profile.
         </div>
       </section>
 
