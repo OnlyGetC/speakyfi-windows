@@ -15,7 +15,7 @@ const L10N = {
     recording: "RECORDING...",
     processing: "PROCESSING",
     output: "OUTPUT: ",
-    idleHint: "Hold Ctrl to record",
+    idleHint: "Hold {key} to record",
     copy: "[COPY]",
     copied: "[COPIED]",
     ptt: "PTT",
@@ -26,7 +26,7 @@ const L10N = {
     recording: "ЗАПИСЬ...",
     processing: "ОБРАБОТКА",
     output: "ТЕКСТ: ",
-    idleHint: "Удержите Ctrl для записи",
+    idleHint: "Удержите {key} для записи",
     copy: "[КОПИРОВАТЬ]",
     copied: "[СКОПИРОВАНО]",
     ptt: "КТГ",
@@ -37,6 +37,42 @@ const L10N = {
 function t(key) {
   const lang = localStorage.getItem("lang") || "en";
   return (L10N[lang] || L10N.en)[key] || key;
+}
+
+function vkCodeToName(vk) {
+  const VK_NAMES = {
+    0x08: "Backspace", 0x09: "Tab", 0x0D: "Enter", 0x10: "Shift",
+    0x11: "Ctrl", 0x12: "Alt", 0x13: "Pause", 0x14: "CapsLock",
+    0x1B: "Esc", 0x20: "Space", 0x21: "PgUp", 0x22: "PgDn",
+    0x23: "End", 0x24: "Home", 0x25: "Left", 0x26: "Up",
+    0x27: "Right", 0x28: "Down", 0x2C: "PrtSc", 0x2D: "Ins",
+    0x2E: "Del", 0x5B: "LWin", 0x5C: "RWin",
+    0x70: "F1", 0x71: "F2", 0x72: "F3", 0x73: "F4",
+    0x74: "F5", 0x75: "F6", 0x76: "F7", 0x77: "F8",
+    0x78: "F9", 0x79: "F10", 0x7A: "F11", 0x7B: "F12",
+    0x90: "NumLock", 0x91: "ScrollLock",
+    0xA0: "LShift", 0xA1: "RShift", 0xA2: "LCtrl", 0xA3: "RCtrl",
+    0xA4: "LAlt", 0xA5: "RAlt",
+  };
+  if (vk >= 0x41 && vk <= 0x5A) return String.fromCharCode(vk);
+  if (vk >= 0x30 && vk <= 0x39) return String.fromCharCode(vk);
+  return VK_NAMES[vk] || "0x" + vk.toString(16).toUpperCase();
+}
+
+function hotkeyLabel(key, mods) {
+  if (!key) return "Ctrl";
+  const parts = [];
+  if (mods & 0x0002) parts.push("Ctrl");
+  if (mods & 0x0001) parts.push("Alt");
+  if (mods & 0x0004) parts.push("Shift");
+  if (mods & 0x0008) parts.push("Win");
+  parts.push(vkCodeToName(key));
+  return parts.join("+");
+}
+
+function idleHintText() {
+  const key = hotkeyLabel(config?.ptt_key || 0x11, config?.ptt_modifiers || 0);
+  return t("idleHint").replace("{key}", key);
 }
 
 // ============================================================
@@ -81,7 +117,7 @@ function setState(state, data) {
       els.statusIcon.textContent = "○";
       els.statusIcon.className = "status-icon";
       els.statusText.textContent = t("ready");
-      els.idleHint.textContent = t("idleHint");
+      els.idleHint.textContent = idleHintText();
       if (resultDismissTimer) clearTimeout(resultDismissTimer);
       break;
 
@@ -253,6 +289,19 @@ async function setupEventListeners() {
   await listen("transcription-result", (e) => {
     setState("result", e.payload);
   });
+
+  await listen("config-updated", async (e) => {
+    config = e.payload || await loadConfig();
+    await registerHotkeysFromConfig();
+    if (currentState === "idle") {
+      setState("idle");
+    }
+  });
+
+  await listen("hotkey-error", (e) => {
+    console.error("Hotkey error:", e.payload);
+    setState("result", "[HOTKEY ERROR] " + e.payload);
+  });
 }
 
 // ============================================================
@@ -299,6 +348,22 @@ async function loadConfig() {
   return config;
 }
 
+async function registerHotkeysFromConfig() {
+  const cfg = config || await loadConfig();
+  await invoke("unregister_all_hotkeys");
+
+  const pttKey = cfg.ptt_key || 0x11;
+  const pttMods = cfg.ptt_modifiers || 0;
+  await invoke("register_ptt_hotkey", { key: pttKey, modifiers: pttMods });
+
+  if (cfg.vad_toggle_key) {
+    await invoke("register_vad_toggle_hotkey", {
+      key: cfg.vad_toggle_key,
+      modifiers: cfg.vad_toggle_modifiers || 0,
+    });
+  }
+}
+
 // ============================================================
 // Helpers
 // ============================================================
@@ -321,19 +386,7 @@ async function init() {
     els.statusMode.textContent = t("ptt");
     setState("idle");
     await setupEventListeners();
-
-    // Register PTT hotkey (default: VK_CONTROL = 0x11)
-    const pttKey = config.ptt_key || 0x11;
-    const pttMods = config.ptt_modifiers || 0;
-    await invoke("register_ptt_hotkey", { key: pttKey, modifiers: pttMods });
-
-    // Register VAD hotkey if configured
-    if (config.vad_toggle_key) {
-      await invoke("register_vad_toggle_hotkey", {
-        key: config.vad_toggle_key,
-        modifiers: config.vad_toggle_modifiers || 0,
-      });
-    }
+    await registerHotkeysFromConfig();
   } catch (err) {
     console.error("Init error:", err);
   }

@@ -4,7 +4,7 @@
  */
 
 const { invoke } = window.__TAURI__.core;
-const { listen } = window.__TAURI__.event;
+const { listen, emit } = window.__TAURI__.event;
 
 // ============================================================
 // Navigation
@@ -111,6 +111,8 @@ document.getElementById("btn-save").addEventListener("click", async () => {
   try {
     const cfg = collectConfigFromUI();
     await invoke("save_config", { config: cfg });
+    config = cfg;
+    await emit("config-updated", cfg);
     const btn = document.getElementById("btn-save");
     btn.textContent = "[ SAVED ]";
     setTimeout(() => { btn.textContent = "[ SAVE ]"; }, 1500);
