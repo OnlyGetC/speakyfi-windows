@@ -153,7 +153,7 @@ async function runTranscription(audioBuffer) {
       const audioB64 = float32ToBase64(audioBuffer);
       text = await invoke("cloud_transcribe", {
         provider: cfg.cloud_provider,
-        audiob64: audioB64,
+        audioB64,
         language: cfg.language || "auto",
       });
     } else {

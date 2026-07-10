@@ -180,3 +180,30 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, &'static str> {
     }
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pcm_to_wav_writes_riff_header() {
+        let audio = vec![0.0_f32, 0.5, -0.5, 1.0, -1.0];
+        let wav = pcm_to_wav(&audio, 16000).unwrap();
+
+        assert!(wav.starts_with(b"RIFF"));
+        assert_eq!(&wav[8..12], b"WAVE");
+        assert!(wav.len() > 44);
+    }
+
+    #[test]
+    fn base64_decode_handles_float32_pcm_bytes() {
+        let encoded = "AAAAAAAAgD8AAIA/";
+        let bytes = base64_decode(encoded).unwrap();
+        let samples: Vec<f32> = bytes
+            .chunks_exact(4)
+            .map(|chunk| f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
+            .collect();
+
+        assert_eq!(samples, vec![0.0, 1.0, 1.0]);
+    }
+}

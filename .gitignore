@@ -27,3 +27,6 @@ desktop.ini
 
 # Logs
 *.log
+
+# Generated acceptance report
+CHECKLIST_REPORT.md

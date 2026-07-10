@@ -219,3 +219,33 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, &'static str> {
     }
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_uses_cloud_or_local_provider_field() {
+        let config = AppConfig::default();
+
+        assert_eq!(config.version, "1.6.0");
+        assert_eq!(config.language, "auto");
+        assert_eq!(config.cloud_provider, "local");
+    }
+
+    #[test]
+    fn base64_helpers_roundtrip_binary_data() {
+        let data = b"speakyfi\0binary\0data";
+        let encoded = base64_encode(data);
+        let decoded = base64_decode(&encoded).unwrap();
+
+        assert_eq!(decoded, data);
+    }
+
+    #[test]
+    fn derived_machine_key_is_32_bytes() {
+        let key = derive_machine_key();
+
+        assert_eq!(key.len(), 32);
+    }
+}

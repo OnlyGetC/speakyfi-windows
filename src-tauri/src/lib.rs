@@ -5,6 +5,7 @@ mod output;
 mod cloud;
 mod correction;
 mod config;
+mod diagnostics;
 
 use tauri::Manager;
 
@@ -86,6 +87,7 @@ pub fn run() {
             config::save_config,
             config::save_api_key,
             config::load_api_key,
+            diagnostics::collect_diagnostics,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

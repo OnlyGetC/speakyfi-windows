@@ -31,12 +31,30 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0" --locked
 
+      - name: Rust check
+        id: rust_check
+        run: cargo check --manifest-path src-tauri/Cargo.toml --locked
+
+      - name: Rust tests
+        id: rust_tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+
       - name: Build Speakyfi (cloud-only, no local whisper)
+        id: tauri_build
         run: cargo tauri build
         working-directory: .
         env:
           TAURI_SIGNING_PRIVATE_KEY: ""
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+
+      - name: Generate acceptance checklist report
+        if: always()
+        run: node scripts/generate-checklist-report.mjs
+        env:
+          RUST_CHECK_STATUS: ${{ steps.rust_check.outcome }}
+          RUST_TEST_STATUS: ${{ steps.rust_tests.outcome }}
+          TAURI_BUILD_STATUS: ${{ steps.tauri_build.outcome }}
+          DIAGNOSTICS_STATUS: ${{ steps.rust_tests.outcome }}
 
       - name: Upload MSI installer
         uses: actions/upload-artifact@v4
@@ -59,5 +77,14 @@ jobs:
         with:
           name: speakyfi-windows-exe
           path: src-tauri/target/release/speakyfi.exe
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload acceptance checklist report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: speakyfi-windows-checklist-report
+          path: CHECKLIST_REPORT.md
           retention-days: 30
           if-no-files-found: warn

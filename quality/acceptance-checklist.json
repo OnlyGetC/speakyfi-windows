@@ -1,0 +1,96 @@
+[
+  {
+    "id": "ci.rust_check",
+    "title": "Rust code compiles",
+    "method": "github_actions",
+    "auto": true,
+    "env": "RUST_CHECK_STATUS"
+  },
+  {
+    "id": "ci.rust_tests",
+    "title": "Rust unit and integration tests pass",
+    "method": "github_actions",
+    "auto": true,
+    "env": "RUST_TEST_STATUS"
+  },
+  {
+    "id": "ci.tauri_build",
+    "title": "Tauri Windows build completes",
+    "method": "github_actions",
+    "auto": true,
+    "env": "TAURI_BUILD_STATUS"
+  },
+  {
+    "id": "artifact.msi",
+    "title": "MSI installer artifact exists",
+    "method": "artifact_check",
+    "auto": true,
+    "path": "src-tauri/target/release/bundle/msi",
+    "extension": ".msi"
+  },
+  {
+    "id": "artifact.nsis",
+    "title": "NSIS installer artifact exists",
+    "method": "artifact_check",
+    "auto": true,
+    "path": "src-tauri/target/release/bundle/nsis",
+    "extension": ".exe"
+  },
+  {
+    "id": "artifact.portable_exe",
+    "title": "Portable EXE artifact exists",
+    "method": "artifact_check",
+    "auto": true,
+    "path": "src-tauri/target/release",
+    "filename": "speakyfi.exe"
+  },
+  {
+    "id": "diagnostics.config",
+    "title": "Diagnostics command compiles and report shape is test-covered",
+    "method": "diagnostics",
+    "auto": true,
+    "env": "DIAGNOSTICS_STATUS"
+  },
+  {
+    "id": "diagnostics.audio_devices",
+    "title": "Diagnostics can enumerate audio input devices",
+    "method": "diagnostics",
+    "auto": false,
+    "manual_reason": "Needs a live Windows session with real audio devices."
+  },
+  {
+    "id": "runtime.install_launch",
+    "title": "Installer installs and app launches on Windows",
+    "method": "windows_smoke",
+    "auto": false,
+    "manual_reason": "Needs a Windows desktop session or self-hosted Windows runner."
+  },
+  {
+    "id": "runtime.tray_settings",
+    "title": "Tray icon and settings window work",
+    "method": "windows_smoke",
+    "auto": false,
+    "manual_reason": "Needs Windows shell/tray UI."
+  },
+  {
+    "id": "runtime.ptt_recording",
+    "title": "PTT starts and stops recording",
+    "method": "manual",
+    "auto": false,
+    "manual_reason": "Requires real keyboard input and microphone behavior."
+  },
+  {
+    "id": "runtime.transcription",
+    "title": "Recorded audio is transcribed by the selected provider",
+    "method": "manual",
+    "auto": false,
+    "manual_reason": "Requires provider key and real recorded audio."
+  },
+  {
+    "id": "runtime.text_insertion",
+    "title": "Transcribed text is inserted into the active Windows app",
+    "method": "manual",
+    "auto": false,
+    "manual_reason": "Requires an active foreground application such as Notepad."
+  }
+]
