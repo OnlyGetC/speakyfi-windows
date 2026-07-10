@@ -33,11 +33,11 @@ jobs:
 
       - name: Rust check
         id: rust_check
-        run: cargo check --manifest-path src-tauri/Cargo.toml --locked
+        run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Rust tests
         id: rust_tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+        run: cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Build Speakyfi (cloud-only, no local whisper)
         id: tauri_build
