@@ -85,6 +85,7 @@ let resultDismissTimer = null;
 let currentMode = "ptt"; // ptt | vad
 let config = null;
 const HISTORY_KEY = "speakyfi.history";
+const MIN_AUDIO_SAMPLES = 1600; // 100ms at 16kHz; shorter buffers are not useful.
 
 // ============================================================
 // UI References
@@ -273,6 +274,20 @@ async function runTranscription(audioBuffer) {
   }
 }
 
+function showPipelineError(message, footer = "ERROR") {
+  const text = "[ERROR] " + message;
+  addHistory({
+    text: "",
+    inserted: false,
+    insertError: message,
+    provider: config?.cloud_provider || "local",
+    language: config?.language || "auto",
+    model: config?.model || "base",
+  });
+  setState("result", text);
+  els.footerMode.textContent = footer;
+}
+
 // ============================================================
 // PTT event handlers (Tauri events from hotkeys.rs)
 // ============================================================
@@ -287,6 +302,7 @@ async function setupEventListeners() {
       setState("recording");
     } catch (err) {
       console.error("start_ptt error:", err);
+      showPipelineError("Microphone start failed: " + (err.message || err), "MIC ERROR");
     }
   });
 
@@ -296,15 +312,17 @@ async function setupEventListeners() {
     try {
       const audio = await invoke("stop_ptt");
       pttAudioBuffer = new Float32Array(audio);
-      if (pttAudioBuffer.length < 1600) {
-        // Too short — discard
-        setState("idle");
+      if (pttAudioBuffer.length < MIN_AUDIO_SAMPLES) {
+        showPipelineError(
+          `No usable audio captured (${pttAudioBuffer.length} samples). Check Windows microphone permissions and default input device.`,
+          "NO AUDIO",
+        );
         return;
       }
       await runTranscription(pttAudioBuffer);
     } catch (err) {
       console.error("stop_ptt error:", err);
-      setState("idle");
+      showPipelineError("Microphone stop failed: " + (err.message || err), "MIC ERROR");
     }
   });
 
