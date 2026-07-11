@@ -19,6 +19,7 @@ document.querySelectorAll(".nav-item").forEach(item => {
     const sec = document.getElementById("sec-" + section);
     if (sec) sec.classList.add("active");
     if (section === "history") renderHistory();
+    if (section === "diagnostics") renderDiagnostics();
   });
 });
 
@@ -266,6 +267,29 @@ document.getElementById("btn-save-provider-key")?.addEventListener("click", asyn
   }
 });
 
+document.getElementById("btn-check-ollama")?.addEventListener("click", async () => {
+  const endpoint = document.getElementById("ollama-endpoint")?.value || "http://localhost:11434";
+  const model = document.getElementById("ollama-model")?.value || "";
+  const box = document.getElementById("ollama-check-result");
+  const msg = document.getElementById("ollama-check-message");
+  if (box) box.style.display = "block";
+  if (msg) msg.textContent = "Checking...";
+
+  try {
+    const status = await invoke("check_ollama_model", { endpoint, model });
+    if (status.available) {
+      msg.textContent = `OK: ${model} is installed.`;
+    } else {
+      const installed = status.installed_models.length
+        ? ` Installed: ${status.installed_models.join(", ")}.`
+        : " No installed models reported.";
+      msg.textContent = `Missing: ${model}.${installed} Run: ollama pull ${model}`;
+    }
+  } catch (err) {
+    if (msg) msg.textContent = "Check failed: " + (err.message || err);
+  }
+});
+
 // ============================================================
 // Model management
 // ============================================================
@@ -341,19 +365,38 @@ function renderHistory() {
   history.slice(0, 30).forEach((item) => {
     const row = document.createElement("div");
     row.className = "history-row";
-    const status = item.inserted ? "INSERT OK" : (item.insertError ? "INSERT FAIL" : "NO INSERT");
-    const text = item.text || item.insertError || "";
+    const status = historyStatus(item);
+    const text = item.text || item.rawText || item.transcriptionError || item.correctionError || item.insertError || "";
     row.innerHTML = `
       <div class="history-meta">
         <span>${new Date(item.ts).toLocaleString()}</span>
         <span>${status}</span>
         <span>${item.provider || "local"}</span>
+        <span>${item.model || "base"}</span>
       </div>
       <div class="history-text"></div>
     `;
-    row.querySelector(".history-text").textContent = text;
+    row.querySelector(".history-text").textContent = historyText(item, text);
     list.appendChild(row);
   });
+}
+
+function historyStatus(item) {
+  if (item.transcriptionError) return "TRANSCRIBE ERROR";
+  if (item.correctionError) return item.inserted ? "CORRECTION ERROR / INSERT OK" : "CORRECTION ERROR";
+  if (item.inserted) return "INSERT OK";
+  if (item.insertError) return "INSERT FAIL";
+  return "NO INSERT";
+}
+
+function historyText(item, text) {
+  const parts = [];
+  if (item.rawText && item.rawText !== item.text) parts.push("RAW: " + item.rawText);
+  if (text) parts.push("TEXT: " + text);
+  if (item.transcriptionError) parts.push("TRANSCRIBE ERROR: " + item.transcriptionError);
+  if (item.correctionError) parts.push("CORRECTION ERROR: " + item.correctionError);
+  if (item.insertError) parts.push("INSERT ERROR: " + item.insertError);
+  return parts.join("\n");
 }
 
 document.getElementById("btn-refresh-history")?.addEventListener("click", renderHistory);
@@ -362,6 +405,63 @@ document.getElementById("btn-clear-history")?.addEventListener("click", () => {
   localStorage.removeItem(HISTORY_KEY);
   renderHistory();
 });
+
+// ============================================================
+// Diagnostics
+// ============================================================
+async function renderDiagnostics() {
+  const list = document.getElementById("diagnostics-list");
+  if (!list) return;
+
+  list.innerHTML = '<div class="history-empty">Loading diagnostics...</div>';
+  try {
+    const report = await invoke("collect_diagnostics");
+    const rows = [
+      ["Package Version", report.package_version],
+      ["Config Version", report.app_version],
+      ["Build Mode", report.build_mode],
+      ["Build Commit", report.build_commit],
+      ["GitHub Run", report.build_run_id],
+      ["Local Whisper", String(report.local_whisper_enabled)],
+      ["Provider", report.cloud_provider],
+      ["Model", report.selected_model],
+      ["Correction", `${report.correction_mode} / ${report.correction_model}`],
+      ["Config Path", report.config_path],
+      ["Data Dir", report.data_dir],
+      ["Default Input", report.default_input_device || "none"],
+      ["Input Devices", (report.input_devices || []).join(", ") || "none"],
+    ];
+
+    list.innerHTML = "";
+    rows.forEach(([label, value]) => {
+      const row = document.createElement("div");
+      row.className = "diagnostics-row";
+      row.innerHTML = `
+        <span class="diagnostics-key"></span>
+        <span class="diagnostics-value"></span>
+      `;
+      row.querySelector(".diagnostics-key").textContent = label;
+      row.querySelector(".diagnostics-value").textContent = value || "";
+      list.appendChild(row);
+    });
+
+    (report.checks || []).forEach((check) => {
+      const row = document.createElement("div");
+      row.className = "diagnostics-row";
+      row.innerHTML = `
+        <span class="diagnostics-key"></span>
+        <span class="diagnostics-value"></span>
+      `;
+      row.querySelector(".diagnostics-key").textContent = check.id;
+      row.querySelector(".diagnostics-value").textContent = `${check.status}: ${check.detail}`;
+      list.appendChild(row);
+    });
+  } catch (err) {
+    list.innerHTML = `<div class="history-empty">Diagnostics failed: ${err.message || err}</div>`;
+  }
+}
+
+document.getElementById("btn-refresh-diagnostics")?.addEventListener("click", renderDiagnostics);
 
 // ============================================================
 // Update check (stub — checks GitHub releases)
@@ -410,6 +510,7 @@ async function init() {
   await loadConfig();
   await refreshModelList();
   renderHistory();
+  renderDiagnostics();
 }
 
 init();

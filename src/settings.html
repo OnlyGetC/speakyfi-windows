@@ -23,6 +23,7 @@
         <li class="nav-item" data-section="prompt">&#x2022; Prompt</li>
         <li class="nav-item" data-section="correction">&#x2022; Correction</li>
         <li class="nav-item" data-section="providers">&#x2022; Providers</li>
+        <li class="nav-item" data-section="diagnostics">&#x2022; Diagnostics</li>
         <li class="nav-item" data-section="history">&#x2022; History</li>
         <li class="nav-item" data-section="interface">&#x2022; Interface</li>
         <li class="nav-item" data-section="updates">&#x2022; Updates</li>
@@ -151,6 +152,11 @@
             <label class="setting-label">Model</label>
             <input class="amber-input" id="ollama-model"
               value="llama3.2:1b" type="text" />
+            <button class="amber-btn-action" id="btn-check-ollama">[ CHECK ]</button>
+          </div>
+          <div id="ollama-check-result" class="info-box" style="display:none">
+            <span class="info-prefix">OLLAMA&gt;&nbsp;</span>
+            <span id="ollama-check-message"></span>
           </div>
           <div class="info-box">
             <span class="info-prefix">INFO&gt;&nbsp;</span>
@@ -210,6 +216,22 @@
           OpenAI, Groq, and Deepgram are optional paid/cloud alternatives.
           Ollama in Correction does not listen to audio;
           it only edits text after this provider returns a transcript.
+        </div>
+      </section>
+
+      <!-- // Diagnostics -->
+      <section id="sec-diagnostics" class="settings-section">
+        <h2 class="section-title">// Diagnostics</h2>
+        <div class="setting-row">
+          <button class="amber-btn-action" id="btn-refresh-diagnostics">[ REFRESH ]</button>
+        </div>
+        <div id="diagnostics-list" class="diagnostics-list">
+          <!-- Populated by JS -->
+        </div>
+        <div class="info-box">
+          <span class="info-prefix">INFO&gt;&nbsp;</span>
+          Use this section to verify the exact build running on Windows.
+          For local mode, Build Mode must be <code>local-whisper</code> and Local Whisper must be <code>true</code>.
         </div>
       </section>
 

@@ -422,6 +422,33 @@ code {
   padding: 8px;
 }
 
+/* ---- Diagnostics ---- */
+.diagnostics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.diagnostics-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--amber-border-f);
+  background: rgba(204,136,0,0.03);
+  font-size: 11px;
+}
+
+.diagnostics-key {
+  color: var(--amber-dim);
+}
+
+.diagnostics-value {
+  color: var(--amber-bright);
+  word-break: break-word;
+}
+
 /* ---- Progress bar ---- */
 .progress-bar-wrap {
   position: relative;

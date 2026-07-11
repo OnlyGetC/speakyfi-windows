@@ -30,3 +30,8 @@ Manual checks currently cover the parts that need a real Windows desktop session
 - PTT press/release feel;
 - local transcription with a downloaded whisper.cpp model, or cloud transcription with a provider key;
 - text insertion into a foreground app.
+
+For local-whisper regressions, use the exact flow in
+[`docs/windows-local-mode-checklist.md`](windows-local-mode-checklist.md). It starts by killing old
+processes and verifying Settings -> Diagnostics, because most false bug reports come from running an
+old artifact or an already-running old process.

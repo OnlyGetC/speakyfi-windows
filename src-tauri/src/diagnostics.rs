@@ -11,11 +11,18 @@ pub struct DiagnosticCheck {
 #[derive(Debug, Serialize)]
 pub struct DiagnosticsReport {
     pub app_version: String,
+    pub package_version: String,
+    pub build_mode: String,
+    pub build_commit: String,
+    pub build_run_id: String,
     pub data_dir: String,
     pub config_path: String,
     pub keys_path: String,
     pub logs_path: String,
     pub cloud_provider: String,
+    pub selected_model: String,
+    pub correction_mode: String,
+    pub correction_model: String,
     pub local_whisper_enabled: bool,
     pub api_keys: Vec<ProviderKeyStatus>,
     pub input_devices: Vec<String>,
@@ -66,6 +73,19 @@ pub fn collect_diagnostics(app: AppHandle) -> Result<DiagnosticsReport, String> 
         detail: config.cloud_provider.clone(),
     });
     checks.push(DiagnosticCheck {
+        id: "diagnostics.local_whisper".to_string(),
+        status: if cfg!(feature = "local-whisper") {
+            "ok".to_string()
+        } else {
+            "warning".to_string()
+        },
+        detail: if cfg!(feature = "local-whisper") {
+            "enabled".to_string()
+        } else {
+            "disabled".to_string()
+        },
+    });
+    checks.push(DiagnosticCheck {
         id: "diagnostics.audio_input_devices".to_string(),
         status: if input_devices.is_empty() {
             "warning".to_string()
@@ -77,17 +97,38 @@ pub fn collect_diagnostics(app: AppHandle) -> Result<DiagnosticsReport, String> 
 
     Ok(DiagnosticsReport {
         app_version: config.version,
+        package_version: env!("CARGO_PKG_VERSION").to_string(),
+        build_mode: if cfg!(feature = "local-whisper") {
+            "local-whisper".to_string()
+        } else {
+            "cloud-only".to_string()
+        },
+        build_commit: short_env("GITHUB_SHA"),
+        build_run_id: option_env!("GITHUB_RUN_ID").unwrap_or("local").to_string(),
         data_dir: data_dir.to_string_lossy().to_string(),
         config_path: config_path.to_string_lossy().to_string(),
         keys_path: keys_path.to_string_lossy().to_string(),
         logs_path: logs_path.to_string_lossy().to_string(),
         cloud_provider: config.cloud_provider,
+        selected_model: config.model,
+        correction_mode: config.correction_mode,
+        correction_model: config.correction_model,
         local_whisper_enabled: cfg!(feature = "local-whisper"),
         api_keys,
         input_devices,
         default_input_device,
         checks,
     })
+}
+
+fn short_env(name: &str) -> String {
+    let value = match name {
+        "GITHUB_SHA" => option_env!("GITHUB_SHA"),
+        _ => None,
+    }
+    .unwrap_or("local");
+
+    value.chars().take(12).collect()
 }
 
 fn list_input_device_names() -> Vec<String> {
@@ -138,5 +179,10 @@ mod tests {
         assert_eq!(value["id"], "diagnostics.config_path");
         assert_eq!(value["status"], "ok");
         assert_eq!(value["detail"], "config.json");
+    }
+
+    #[test]
+    fn short_env_returns_stable_value() {
+        assert!(!short_env("GITHUB_SHA").is_empty());
     }
 }

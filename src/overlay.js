@@ -87,7 +87,7 @@ let config = null;
 const HISTORY_KEY = "speakyfi.history";
 const MIN_AUDIO_SAMPLES = 1600; // 100ms at 16kHz; shorter buffers are not useful.
 const SAMPLE_RATE = 16000;
-const LOCAL_TRANSCRIBE_TIMEOUT_MS = 120000;
+const LOCAL_TRANSCRIBE_TIMEOUT_MS = 130000;
 const CLOUD_TRANSCRIBE_TIMEOUT_MS = 60000;
 const CORRECTION_TIMEOUT_MS = 45000;
 
@@ -204,16 +204,19 @@ function stopWaveformAnimation() {
 async function runTranscription(audioBuffer) {
   setState("transcribing");
 
-  try {
-    const cfg = config || await loadConfig();
-    let text = "";
-    let inserted = false;
-    let insertError = "";
+  const cfg = config || await loadConfig();
+  let rawText = "";
+  let finalText = "";
+  let inserted = false;
+  let insertError = "";
+  let transcriptionError = "";
+  let correctionError = "";
 
+  try {
     if (cfg.cloud_provider && cfg.cloud_provider !== "local") {
       // Cloud transcription
       const audioB64 = float32ToBase64(audioBuffer);
-      text = await withTimeout(
+      rawText = await withTimeout(
         invoke("cloud_transcribe", {
           provider: cfg.cloud_provider,
           audioB64,
@@ -226,7 +229,7 @@ async function runTranscription(audioBuffer) {
     } else {
       // Local whisper.cpp
       const localAudio = limitLocalAudio(audioBuffer);
-      text = await withTimeout(
+      rawText = await withTimeout(
         invoke("transcribe_audio", {
           audio: Array.from(localAudio),
           language: cfg.language || "auto",
@@ -234,16 +237,37 @@ async function runTranscription(audioBuffer) {
           prompt: cfg.prompt || "",
         }),
         LOCAL_TRANSCRIBE_TIMEOUT_MS,
-        "Local whisper timed out. Try the tiny/base model, record a shorter phrase, or use a cloud provider.",
+        "Local whisper did not return. Try the tiny/base model, record a shorter phrase, or restart Speakyfi and verify Diagnostics.",
       );
     }
+  } catch (err) {
+    transcriptionError = err.message || String(err);
+    console.error("Transcription error:", err);
+    addHistory({
+      text: "",
+      rawText: "",
+      inserted: false,
+      insertError: transcriptionError,
+      transcriptionError,
+      correctionError: "",
+      provider: cfg.cloud_provider || "local",
+      language: cfg.language || "auto",
+      model: cfg.model || "base",
+    });
+    setState("result", "[TRANSCRIBE ERROR] " + transcriptionError);
+    els.footerMode.textContent = "TRANSCRIBE ERROR";
+    return;
+  }
 
-    // Text correction
-    if (cfg.correction_mode && cfg.correction_mode !== "off") {
-      text = await withTimeout(
+  finalText = String(rawText || "").trim();
+
+  // Text correction should never destroy a successful raw transcript.
+  if (finalText && cfg.correction_mode && cfg.correction_mode !== "off") {
+    try {
+      finalText = await withTimeout(
         invoke("correct_text", {
           request: {
-            text,
+            text: finalText,
             mode: cfg.correction_mode,
             endpoint: cfg.correction_endpoint || "http://localhost:11434",
             model: cfg.correction_model || "llama3.2:1b",
@@ -253,42 +277,50 @@ async function runTranscription(audioBuffer) {
         CORRECTION_TIMEOUT_MS,
         "Text correction timed out. Turn correction off or check the correction model endpoint.",
       );
+      finalText = String(finalText || "").trim();
+    } catch (err) {
+      correctionError = err.message || String(err);
+      console.error("Correction error:", err);
+      finalText = String(rawText || "").trim();
     }
+  }
 
-    // Auto-insert into active window
-    if (text && text.trim()) {
-      try {
-        await invoke("send_text", { text: text.trim() + " " });
-        inserted = true;
-      } catch (err) {
-        insertError = err.message || String(err);
-        console.error("send_text error:", err);
-      }
+  // Auto-insert into active window
+  if (finalText) {
+    try {
+      await invoke("send_text", { text: finalText + " " });
+      inserted = true;
+    } catch (err) {
+      insertError = err.message || String(err);
+      console.error("send_text error:", err);
     }
+  }
 
-    addHistory({
-      text: text.trim(),
-      inserted,
-      insertError,
-      provider: cfg.cloud_provider || "local",
-      language: cfg.language || "auto",
-      model: cfg.model || "base",
-    });
+  addHistory({
+    text: finalText,
+    rawText: String(rawText || "").trim(),
+    inserted,
+    insertError,
+    transcriptionError,
+    correctionError,
+    provider: cfg.cloud_provider || "local",
+    language: cfg.language || "auto",
+    model: cfg.model || "base",
+  });
 
-    setState("result", text.trim());
-    els.footerMode.textContent = inserted ? "INSERT OK" : (insertError ? "INSERT FAIL" : "NO TEXT");
-  } catch (err) {
-    console.error("Transcription error:", err);
-    addHistory({
-      text: "",
-      inserted: false,
-      insertError: err.message || String(err),
-      provider: config?.cloud_provider || "local",
-      language: config?.language || "auto",
-      model: config?.model || "base",
-    });
-    setState("result", "[ERROR] " + (err.message || err));
-    els.footerMode.textContent = "ERROR";
+  const displayText = correctionError
+    ? `${finalText}\n[CORRECTION ERROR] ${correctionError}`
+    : finalText;
+  setState("result", displayText);
+
+  if (correctionError) {
+    els.footerMode.textContent = "CORRECTION ERROR";
+  } else if (inserted) {
+    els.footerMode.textContent = "INSERT OK";
+  } else if (insertError) {
+    els.footerMode.textContent = "INSERT FAIL";
+  } else {
+    els.footerMode.textContent = "NO TEXT";
   }
 }
 

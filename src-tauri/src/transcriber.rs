@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
 const MODEL_URLS: &[(&str, &str)] = &[
@@ -13,6 +14,7 @@ const MODEL_URLS: &[(&str, &str)] = &[
 const SAMPLE_RATE: usize = 16000;
 const MAX_LOCAL_AUDIO_SECONDS: usize = 30;
 const MAX_LOCAL_AUDIO_SAMPLES: usize = SAMPLE_RATE * MAX_LOCAL_AUDIO_SECONDS;
+const LOCAL_TRANSCRIBE_TIMEOUT_SECONDS: u64 = 120;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelStatus {
@@ -37,7 +39,7 @@ fn model_path(app: &AppHandle, model: &str) -> PathBuf {
 /// Only available when compiled with the "local-whisper" feature.
 /// Returns the transcribed text string.
 #[tauri::command]
-pub fn transcribe_audio(
+pub async fn transcribe_audio(
     app: AppHandle,
     audio: Vec<f32>,
     language: String,
@@ -46,59 +48,17 @@ pub fn transcribe_audio(
 ) -> Result<String, String> {
     #[cfg(feature = "local-whisper")]
     {
-        use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
+        let task = tauri::async_runtime::spawn_blocking(move || {
+            transcribe_audio_blocking(app, audio, language, model, prompt)
+        });
 
-        let path = model_path(&app, &model);
-        if !path.exists() {
-            return Err(format!(
-                "Model '{}' not found. Download it from settings first.",
-                model
-            ));
+        match tokio::time::timeout(Duration::from_secs(LOCAL_TRANSCRIBE_TIMEOUT_SECONDS), task).await {
+            Ok(joined) => joined.map_err(|e| format!("Local whisper worker failed: {}", e))?,
+            Err(_) => Err(format!(
+                "Local whisper timed out after {} seconds. Try the tiny/base model or record a shorter phrase.",
+                LOCAL_TRANSCRIBE_TIMEOUT_SECONDS,
+            )),
         }
-        validate_model_file(&path, &model)?;
-
-        let audio = if audio.len() > MAX_LOCAL_AUDIO_SAMPLES {
-            audio[audio.len() - MAX_LOCAL_AUDIO_SAMPLES..].to_vec()
-        } else {
-            audio
-        };
-        if audio.is_empty() {
-            return Err("No audio samples captured for local transcription.".to_string());
-        }
-
-        let ctx = WhisperContext::new_with_params(
-            path.to_str().unwrap(),
-            WhisperContextParameters::default(),
-        )
-        .map_err(|e| format!("Failed to load model: {}", e))?;
-
-        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        if language != "auto" && !language.is_empty() {
-            params.set_language(Some(&language));
-        }
-        if !prompt.trim().is_empty() {
-            params.set_initial_prompt(prompt.trim());
-        }
-        params.set_print_special(false);
-        params.set_print_progress(false);
-        params.set_print_realtime(false);
-        params.set_print_timestamps(false);
-
-        let mut state = ctx.create_state().map_err(|e| e.to_string())?;
-        state
-            .full(params, &audio)
-            .map_err(|e| format!("Transcription failed: {}", e))?;
-
-        let num_segments = state.full_n_segments().map_err(|e| e.to_string())?;
-        let mut text = String::new();
-        for i in 0..num_segments {
-            if let Ok(segment) = state.full_get_segment_text(i) {
-                text.push_str(segment.trim());
-                text.push(' ');
-            }
-        }
-
-        Ok(text.trim().to_string())
     }
     #[cfg(not(feature = "local-whisper"))]
     {
@@ -106,6 +66,69 @@ pub fn transcribe_audio(
         let _ = (app, audio, language, model, prompt);
         Err("Local whisper.cpp is not enabled in this build. Download the local-whisper build or choose a cloud provider in Settings.".to_string())
     }
+}
+
+#[cfg(feature = "local-whisper")]
+fn transcribe_audio_blocking(
+    app: AppHandle,
+    audio: Vec<f32>,
+    language: String,
+    model: String,
+    prompt: String,
+) -> Result<String, String> {
+    use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
+
+    let path = model_path(&app, &model);
+    if !path.exists() {
+        return Err(format!(
+            "Model '{}' not found. Download it from settings first.",
+            model
+        ));
+    }
+    validate_model_file(&path, &model)?;
+
+    let audio = if audio.len() > MAX_LOCAL_AUDIO_SAMPLES {
+        audio[audio.len() - MAX_LOCAL_AUDIO_SAMPLES..].to_vec()
+    } else {
+        audio
+    };
+    if audio.is_empty() {
+        return Err("No audio samples captured for local transcription.".to_string());
+    }
+
+    let ctx = WhisperContext::new_with_params(
+        path.to_str().unwrap(),
+        WhisperContextParameters::default(),
+    )
+    .map_err(|e| format!("Failed to load model: {}", e))?;
+
+    let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+    if language != "auto" && !language.is_empty() {
+        params.set_language(Some(&language));
+    }
+    if !prompt.trim().is_empty() {
+        params.set_initial_prompt(prompt.trim());
+    }
+    params.set_print_special(false);
+    params.set_print_progress(false);
+    params.set_print_realtime(false);
+    params.set_print_timestamps(false);
+
+    let mut state = ctx.create_state().map_err(|e| e.to_string())?;
+    state
+        .full(params, &audio)
+        .map_err(|e| format!("Transcription failed: {}", e))?;
+
+    let num_segments = state.full_n_segments().map_err(|e| e.to_string())?;
+    let mut text = String::new();
+    for i in 0..num_segments {
+        if let Ok(segment) = state.full_get_segment_text(i) {
+            text.push_str(segment.trim());
+            text.push(' ');
+        }
+    }
+
+    Ok(text.trim().to_string())
 }
 
 fn validate_model_file(path: &PathBuf, model: &str) -> Result<(), String> {

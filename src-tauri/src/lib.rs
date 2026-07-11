@@ -113,6 +113,7 @@ pub fn run() {
             output::send_text,
             cloud::cloud_transcribe,
             correction::correct_text,
+            correction::check_ollama_model,
             config::load_config,
             config::save_config,
             config::save_api_key,
